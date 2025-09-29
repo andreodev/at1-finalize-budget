@@ -1,0 +1,25 @@
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id      String   @id @map("_id") @default(auto()) @db.ObjectId
+  userId  String   @unique
+  name    String
+  isAdmin Boolean  
+}
+
+model FinalBudget {
+  id     String   @id @map("_id") @default(auto()) @db.ObjectId
+  name   String 
+  isAdmin   String
+  valor  String
+  motivo String
+  obs    String
+}
