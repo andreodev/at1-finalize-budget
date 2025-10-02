@@ -3,6 +3,46 @@ import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
+export async function GET(request: NextRequest) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const userId = searchParams.get('userId');
+
+    if (!userId) {
+      return NextResponse.json({
+        success: false,
+        error: "userId é obrigatório."
+      }, { status: 400 });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { userId }
+    });
+
+    if (user) {
+      return NextResponse.json({ 
+        success: true, 
+        exists: true, 
+        user: {
+          userId: user.userId,
+          name: user.name,
+          isAdmin: user.isAdmin
+        }
+      });
+    } else {
+      return NextResponse.json({ 
+        success: true, 
+        exists: false 
+      });
+    }
+  } catch (error: unknown) {
+    return NextResponse.json(
+      { success: false, error: (error && typeof error === "object" && "message" in error) ? (error as { message?: string }).message : String(error) },
+      { status: 500 }
+    );
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();

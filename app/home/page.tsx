@@ -7,6 +7,7 @@ import { useUser } from "../UserContext";
 import { useWlExtension } from "../WlExtensionContext";
 import { useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
+import { getUserFromLocalStorage } from "@/utils/userUtils";
 
 interface Pedido {
     id: string;
@@ -34,6 +35,8 @@ export default function CadastrarMotivos() {
   const [isAnimating, setIsAnimating] = useState(false);
   const [pedidos, setPedidos] = useState<Pedido[]>([]);
   const [pedidosLoading, setPedidosLoading] = useState(false);
+  const [isCheckingAccess, setIsCheckingAccess] = useState(true);
+  const [hasAccess, setHasAccess] = useState(false);
   const { wl } = useWlExtension()
 
   // Função para buscar pedidos
@@ -49,6 +52,24 @@ export default function CadastrarMotivos() {
       console.error("Erro ao buscar pedidos:", error);
     }
     setPedidosLoading(false);
+  };
+
+  // Função para buscar motivos
+  const fetchMotivos = async () => {
+    setMotivosLoading(true);
+    setMotivosError(null);
+    try {
+      const res = await fetch("/api/motivos");
+      const data = await res.json();
+      if (data.success) {
+        setMotivos(data.motivos);
+      } else {
+        setMotivosError(data.error || "Erro ao buscar motivos.");
+      }
+    } catch {
+      setMotivosError("Erro de conexão.");
+    }
+    setMotivosLoading(false);
   };
 
   // Calcular estatísticas dos motivos
@@ -81,59 +102,109 @@ export default function CadastrarMotivos() {
     }, 300);
   };
 
-  // Obtém userId da extensão WL
+  // Verificação de acesso e carregamento do usuário
   useEffect(() => {
-    if (wl && typeof wl.getInfoUser === "function") {
-      wl.getInfoUser().then((data: { userId: string }) => {
-        setUserId(data.userId);
-      });
-    }
-  }, [wl]);
+    const checkAccess = async () => {
+      // Primeiro tenta carregar do localStorage
+      const localUser = getUserFromLocalStorage();
+      if (localUser) {
+        console.log("[DEBUG] Carregando usuário do localStorage:", localUser);
+        setUser(localUser);
+        if (!localUser.isAdmin) {
+          setHasAccess(false);
+          setIsCheckingAccess(false);
+          return;
+        }
+        setHasAccess(true);
+        setIsCheckingAccess(false);
+        return;
+      }
 
-  // Busca usuário na API quando userId estiver definido e user ainda não estiver no contexto
-  useEffect(() => {
-    if (!user && userId) {
-      fetch(`/api/user-info/${userId}`)
-        .then((res) => res.json())
-        .then((data) => {
+      // Se não há usuário no localStorage, tenta pela extensão WL
+      if (wl && typeof wl.getInfoUser === "function") {
+        try {
+          const wlUserData = await wl.getInfoUser();
+          setUserId(wlUserData.userId);
+          
+          // Busca dados completos na API
+          const res = await fetch(`/api/user-info/${wlUserData.userId}`);
+          const data = await res.json();
+          
           if (data.success && data.user) {
             setUser(data.user);
+            // Salvar no localStorage
+            if (typeof window !== "undefined") {
+              window.localStorage.setItem("userId", data.user.userId);
+              window.localStorage.setItem("userName", data.user.name);
+              window.localStorage.setItem("isAdmin", data.user.isAdmin.toString());
+            }
+            
+            if (!data.user.isAdmin) {
+              setHasAccess(false);
+            } else {
+              setHasAccess(true);
+            }
           } else {
             console.warn("[DEBUG] Usuário não encontrado na API", data);
+            setHasAccess(false);
           }
-        })
-        .catch((err) => {
-          console.error("[DEBUG] Erro ao buscar usuário na API:", err);
-        });
-    }
-  }, [userId, user, setUser]);
-
-
-
-
-
-  // Buscar motivos ao abrir a tela ou ao cadastrar novo motivo
-  const fetchMotivos = async () => {
-    setMotivosLoading(true);
-    setMotivosError(null);
-    try {
-      const res = await fetch("/api/motivos");
-      const data = await res.json();
-      if (data.success) {
-        setMotivos(data.motivos);
+        } catch (err) {
+          console.error("[DEBUG] Erro ao carregar usuário:", err);
+          setHasAccess(false);
+        }
       } else {
-        setMotivosError(data.error || "Erro ao buscar motivos.");
+        setHasAccess(false);
       }
-    } catch {
-      setMotivosError("Erro de conexão.");
-    }
-    setMotivosLoading(false);
-  };
+      
+      setIsCheckingAccess(false);
+    };
 
+    checkAccess();
+  }, [wl, setUser]);
+
+  // Buscar dados apenas se tem acesso
   useEffect(() => {
-    fetchMotivos();
-    fetchPedidos();
-  }, []);
+    if (hasAccess && !isCheckingAccess) {
+      fetchMotivos();
+      fetchPedidos();
+    }
+  }, [hasAccess, isCheckingAccess]);
+
+  // Se ainda está verificando acesso, mostra loading
+  if (isCheckingAccess) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Verificando permissões...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Se não tem acesso, mostra tela de acesso negado
+  if (!hasAccess) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-red-50 to-red-100 flex items-center justify-center">
+        <div className="bg-white rounded-xl shadow-xl p-8 text-center max-w-md mx-4">
+          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+            </svg>
+          </div>
+          <h1 className="text-2xl font-bold text-red-600 mb-2">Acesso Negado</h1>
+          <p className="text-gray-600 mb-4">Você não tem permissão para acessar esta página.</p>
+          <p className="text-sm text-gray-500">Apenas administradores podem cadastrar motivos.</p>
+          <button
+            onClick={() => router.push("/pedidos")}
+            className="mt-6 px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors duration-200"
+          >
+            Voltar aos Pedidos
+          </button>
+        </div>
+      </div>
+    );
+  }
 
 
 
@@ -162,14 +233,7 @@ export default function CadastrarMotivos() {
     setMotivoLoading(false);
   };
 
-  // Salva userId no localStorage quando usuário estiver disponível
-  useEffect(() => {
-    if (user?.userId && typeof window !== "undefined") {
-      window.localStorage.setItem("userId", user.userId);
-    }
-  }, [user]);
 
-  if (user?.isAdmin === false) return <p>ACESSO NEGADO</p>;
 
 
 

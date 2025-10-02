@@ -27,9 +27,9 @@ function HomeContent() {
   const [registered, setRegistered] = useState(false);
   const [userName, setUserName] = useState("");
   const [loading, setLoading] = useState(false);
-  const { setUser } = useUser();
+  const { user, setUser } = useUser();
   
-  console.log(userName, registered)
+  console.log(userName, registered, user)
 
   useEffect(() => {
     const verificarOuCadastrar = async () => {
@@ -81,16 +81,47 @@ function HomeContent() {
       });
       const cacheKey = `userCache_${user.userId}_${channelIds.join("_")}`;
       const cached = window.localStorage.getItem(cacheKey);
-      if (cached) {
-       
+      if (cached && cached !== "cadastrada") {
+        try {
+          const cachedUser = JSON.parse(cached);
+          setRegistered(true);
+          setUserName(cachedUser.name || "Usuário");
+          setTimeout(() => {
+            router.push("/pedidos");
+          }, 800);
+          setLoading(false);
+          return;
+        } catch {
+          // Se não conseguir fazer parse, continua o fluxo normal
+        }
+      }
+
+      // Verificar se usuário já existe no banco
+      const checkRes = await fetch(`/api/user-info?userId=${encodeURIComponent(user.userId)}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+      const checkResult = await checkRes.json();
+      
+      if (checkResult.success && checkResult.exists) {
+        // Usuário já existe, usar dados do banco
+        const existingUser = checkResult.user;
+        window.localStorage.setItem("userId", existingUser.userId);
+        window.localStorage.setItem("userName", existingUser.name);
+        window.localStorage.setItem("isAdmin", existingUser.isAdmin.toString());
+        window.localStorage.setItem(cacheKey, JSON.stringify(existingUser));
         setRegistered(true);
-        setUserName(user.name || "Usuário");
+        setUserName(existingUser.name);
         setTimeout(() => {
           router.push("/pedidos");
         }, 800);
         setLoading(false);
         return;
       }
+
+      // Se não existe, fazer o cadastro
       const res = await fetch("/api/user-info", {
         method: "POST",
         headers: {
@@ -106,6 +137,7 @@ function HomeContent() {
         const userResult = result.users[0].user;
         window.localStorage.setItem("userId", userResult.userId);
         window.localStorage.setItem("userName", userResult.name);
+        window.localStorage.setItem("isAdmin", userResult.isAdmin.toString());
         window.localStorage.setItem(cacheKey, JSON.stringify(userResult));
         setRegistered(true);
         setUserName(userResult.name);
@@ -127,6 +159,7 @@ function HomeContent() {
     };
     verificarOuCadastrar();
   }, [loaded, wl, setUser, router]);
+
 
   return (
     <div className="flex min-h-screen bg-gray-100">

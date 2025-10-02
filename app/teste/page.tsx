@@ -5,6 +5,7 @@
 import React, { useEffect, useState } from "react";
 import { useUser } from "../UserContext";
 import { Award, X } from "lucide-react";
+import { getUserFromLocalStorage } from "../../utils/userUtils";
 
 export default function Page() {
 const { user, setUser } = useUser();
@@ -84,23 +85,33 @@ const { user, setUser } = useUser();
 
   // Carregar usuário do localStorage/API se não houver no contexto
   useEffect(() => {
-    if (!user && typeof window !== "undefined") {
-      const userId = window.localStorage.getItem("userId");
-      if (userId) {
-        fetch(`/api/user-info/${userId}`)
-          .then((res) => res.json())
-          .then((data) => {
-            if (data.success && data.user) {
-              setUser(data.user);
-            } else {
-              console.warn("[DEBUG][teste] Usuário não encontrado na API", data);
-            }
-          })
-          .catch((err) => {
-            console.error("[DEBUG][teste] Erro ao buscar usuário na API:", err);
-          });
-      } else {
-        console.warn("[DEBUG][teste] Nenhum userId encontrado no localStorage");
+    if (!user) {
+      // Primeiro tenta pegar do localStorage usando a função utilitária
+      const localUser = getUserFromLocalStorage();
+      if (localUser) {
+        setUser(localUser);
+      } else if (typeof window !== "undefined") {
+        // Se não encontrou, tenta buscar pela API usando o userId
+        const userId = window.localStorage.getItem("userId");
+        if (userId) {
+          fetch(`/api/user-info/${userId}`)
+            .then((res) => res.json())
+            .then((data) => {
+              if (data.success && data.user) {
+                setUser(data.user);
+                // Atualiza o localStorage com os novos dados
+                window.localStorage.setItem("userName", data.user.name);
+                window.localStorage.setItem("isAdmin", data.user.isAdmin.toString());
+              } else {
+                console.warn("[DEBUG][teste] Usuário não encontrado na API", data);
+              }
+            })
+            .catch((err) => {
+              console.error("[DEBUG][teste] Erro ao buscar usuário na API:", err);
+            });
+        } else {
+          console.warn("[DEBUG][teste] Nenhum userId encontrado no localStorage");
+        }
       }
     }
   }, [user, setUser]);

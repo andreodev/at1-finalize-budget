@@ -5,6 +5,7 @@
 import { ArrowRight, Check, RefreshCw, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { getUserFromLocalStorage } from "../../utils/userUtils";
 
 interface Pedido {
     id: string;
@@ -26,6 +27,9 @@ export default function PedidosPage() {
     const [isAnimating, setIsAnimating] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 2;
+    const [currentUser, setCurrentUser] = useState<{userId: string, name: string, isAdmin: boolean} | null>(null);
+    const [isCheckingAccess, setIsCheckingAccess] = useState(true);
+    const [hasAccess, setHasAccess] = useState(false);
 
     // Calcular estatísticas dos pedidos
     const calcularEstatisticas = () => {
@@ -107,13 +111,108 @@ export default function PedidosPage() {
             });
     };
 
+    // Verificação de acesso e carregamento do usuário
     useEffect(() => {
-        fetchPedidos();
+        const checkAccess = async () => {
+            // Primeiro tenta carregar do localStorage
+            const localUser = getUserFromLocalStorage();
+            if (localUser) {
+                console.log("[DEBUG] Carregando usuário do localStorage:", localUser);
+                setCurrentUser(localUser);
+                // Apenas usuários admin têm acesso à página de pedidos
+                if (localUser.isAdmin) {
+                    setHasAccess(true);
+                } else {
+                    setHasAccess(false);
+                }
+                setIsCheckingAccess(false);
+                return;
+            }
+
+            // Se não há usuário no localStorage, bloqueia acesso
+            console.warn("[DEBUG] Nenhum usuário encontrado no localStorage");
+            setHasAccess(false);
+            setIsCheckingAccess(false);
+        };
+
+        checkAccess();
     }, []);
+
+    // Buscar dados apenas se tem acesso
+    useEffect(() => {
+        if (hasAccess && !isCheckingAccess) {
+            fetchPedidos();
+        }
+    }, [hasAccess, isCheckingAccess]);
+
+    // Se ainda está verificando acesso, mostra loading
+    if (isCheckingAccess) {
+        return (
+            <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center">
+                <div className="text-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                    <p className="text-gray-600">Verificando permissões...</p>
+                </div>
+            </div>
+        );
+    }
+
+    // Se não tem acesso, mostra tela de acesso negado
+    if (!hasAccess) {
+        return (
+            <div className="min-h-screen bg-gradient-to-br from-red-50 to-red-100 flex items-center justify-center">
+                <div className="bg-white rounded-xl shadow-xl p-8 text-center max-w-md mx-4">
+                    <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                        </svg>
+                    </div>
+                    <h1 className="text-2xl font-bold text-red-600 mb-2">Acesso Negado</h1>
+                    <p className="text-gray-600 mb-4">Você não tem permissão para acessar esta página.</p>
+                    <p className="text-sm text-gray-500">Apenas administradores podem visualizar pedidos.</p>
+                    <button
+                        onClick={() => router.push("/")}
+                        className="mt-6 px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors duration-200"
+                    >
+                        Voltar ao Início
+                    </button>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className={`min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-2 sm:p-4 lg:p-6 transition-all duration-300 ${isAnimating ? 'opacity-0 transform scale-95' : 'opacity-100 transform scale-100'}`}>
             <div className="max-w-full mx-auto animate-fade-in">
+                {/* Header com informações do usuário */}
+                {currentUser && (
+                    <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-4 mb-6">
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center">
+                                <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mr-3">
+                                    <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h2 className="text-lg font-bold text-gray-900">Bem-vindo, {currentUser.name}!</h2>
+                                    <div className="flex items-center">
+                                        <span className="text-sm text-gray-600 mr-2">ID: {currentUser.userId}</span>
+                                        {currentUser.isAdmin && (
+                                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                                                <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                </svg>
+                                                Admin
+                                            </span>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+                
                 <div className="flex justify-center items-center mb-6">
                     <button
                         className="flex items-center justify-center px-4 py-2 cursor-pointer bg-white hover:bg-blue-50 border border-gray-200 hover:border-blue-300 rounded-lg shadow-sm transition-all duration-300 text-sm group"
@@ -128,6 +227,7 @@ export default function PedidosPage() {
                     </button>
                 </div>
 
+                {/* Botão Cadastrar Motivos */}
                 <div className="mb-2 text-center">
                     <button
                         className="group inline-flex cursor-pointer items-center px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-all duration-200 hover:scale-105 shadow-lg hover:shadow-xl transform hover:translate-y-[-2px]"
