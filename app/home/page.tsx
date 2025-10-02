@@ -86,7 +86,6 @@ export default function CadastrarMotivos() {
     if (wl && typeof wl.getInfoUser === "function") {
       wl.getInfoUser().then((data: { userId: string }) => {
         setUserId(data.userId);
-        console.log("[DEBUG] userId obtido da extensão WL:", data.userId);
       });
     }
   }, [wl]);
@@ -94,14 +93,11 @@ export default function CadastrarMotivos() {
   // Busca usuário na API quando userId estiver definido e user ainda não estiver no contexto
   useEffect(() => {
     if (!user && userId) {
-      console.log("[DEBUG] Buscando usuário na API com userId:", userId);
       fetch(`/api/user-info/${userId}`)
         .then((res) => res.json())
         .then((data) => {
-          console.log("[DEBUG] /api/userinfo response:", data);
           if (data.success && data.user) {
             setUser(data.user);
-            console.log("[DEBUG] setUser chamado com:", data.user);
           } else {
             console.warn("[DEBUG] Usuário não encontrado na API", data);
           }
@@ -170,13 +166,11 @@ export default function CadastrarMotivos() {
   useEffect(() => {
     if (user?.userId && typeof window !== "undefined") {
       window.localStorage.setItem("userId", user.userId);
-      console.log("[DEBUG][home] userId salvo no localStorage:", user.userId);
     }
   }, [user]);
 
   if (user?.isAdmin === false) return <p>ACESSO NEGADO</p>;
 
-  console.log("[DEBUG] user do contexto:", user);
 
 
   return (

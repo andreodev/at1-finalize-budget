@@ -91,7 +91,6 @@ const { user, setUser } = useUser();
           .then((data) => {
             if (data.success && data.user) {
               setUser(data.user);
-              console.log("[DEBUG][teste] setUser chamado com:", data.user);
             } else {
               console.warn("[DEBUG][teste] Usuário não encontrado na API", data);
             }
@@ -114,7 +113,6 @@ const { user, setUser } = useUser();
     // Salva userId no localStorage quando usuário estiver disponível
     if (user?.userId && typeof window !== "undefined") {
       window.localStorage.setItem("userId", user.userId);
-      console.log("[DEBUG][teste] userId salvo no localStorage:", user.userId);
     }
   }, [user]);
 
@@ -133,8 +131,6 @@ const { user, setUser } = useUser();
         setError("Erro de conexão.");
       });
   }, []);
-
-  console.log("FINALIZAR IMPUT E OS DADOS: ", user)
 
   return (
       <div className="w-full max-w-2xl">

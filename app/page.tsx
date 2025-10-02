@@ -54,10 +54,7 @@ function HomeContent() {
       const cacheKey = `userCache_${user.userId}_${channelIds.join("_")}`;
       const cached = window.localStorage.getItem(cacheKey);
       if (cached) {
-        wl.alert({
-          message: "Usuário já cadastrado (cache). Redirecionando...",
-          variant: "info",
-        });
+       
         setRegistered(true);
         setUserName(user.name || "Usuário");
         setTimeout(() => {
@@ -84,19 +81,11 @@ function HomeContent() {
         window.localStorage.setItem(cacheKey, JSON.stringify(userResult));
         setRegistered(true);
         setUserName(userResult.name);
-        wl.alert({
-          message: `Bem-vindo, ${userResult.name}! Redirecionando...`,
-          variant: "success",
-        });
         setTimeout(() => {
           router.push("/pedidos");
         }, 800);
       } else if (result.error === "Conta já cadastrada, seguindo normalmente.") {
         window.localStorage.setItem(cacheKey, "cadastrada");
-        wl.alert({
-          message: "Conta já cadastrada! Redirecionando...",
-          variant: "info",
-        });
         setTimeout(() => {
           router.push("/home");
         }, 800);

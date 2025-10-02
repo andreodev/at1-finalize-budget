@@ -9,7 +9,6 @@ export async function GET(
 ) {
   try {
     const userId = context.params.userId;
-    console.log("[API DEBUG] GET /api/userinfo/[userId] chamado com:", userId);
     if (!userId) {
       console.warn("[API DEBUG] userId não informado");
       return NextResponse.json({ success: false, error: "userId não informado" }, { status: 400 });
@@ -19,7 +18,6 @@ export async function GET(
       console.warn("[API DEBUG] Usuário não encontrado para userId:", userId);
       return NextResponse.json({ success: false, error: "Usuário não encontrado" }, { status: 404 });
     }
-    console.log("[API DEBUG] Usuário encontrado:", user);
     return NextResponse.json({ success: true, user });
   } catch (error: unknown) {
     console.error("[API DEBUG] Erro na rota /api/userinfo/[userId]:", error);

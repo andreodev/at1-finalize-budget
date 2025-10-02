@@ -39,10 +39,7 @@ export const WlExtensionProvider: React.FC<{ children: React.ReactNode }> = ({ c
           setWl(window.WlExtension ?? null);
           setLoaded(!!window.WlExtension);
           if (window.WlExtension) {
-            window.WlExtension.alert({
-              message: "WL Extension carregada!",
-              variant: "success"
-            });
+           console.log("EXTENSÃO FINALIZAR ATENDIMENTO PERSONALIZADO  .");
           }
         }}
       />
