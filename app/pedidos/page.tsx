@@ -185,34 +185,6 @@ export default function PedidosPage() {
         <div className={`min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-2 sm:p-4 lg:p-6 transition-all duration-300 ${isAnimating ? 'opacity-0 transform scale-95' : 'opacity-100 transform scale-100'}`}>
             <div className="max-w-full mx-auto animate-fade-in">
                 {/* Header com informações do usuário */}
-                {currentUser && (
-                    <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-4 mb-6">
-                        <div className="flex items-center justify-between">
-                            <div className="flex items-center">
-                                <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mr-3">
-                                    <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                                    </svg>
-                                </div>
-                                <div>
-                                    <h2 className="text-lg font-bold text-gray-900">Bem-vindo, {currentUser.name}!</h2>
-                                    <div className="flex items-center">
-                                        <span className="text-sm text-gray-600 mr-2">ID: {currentUser.userId}</span>
-                                        {currentUser.isAdmin && (
-                                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                                                <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                                </svg>
-                                                Admin
-                                            </span>
-                                        )}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                )}
-                
                 <div className="flex justify-center items-center mb-6">
                     <button
                         className="flex items-center justify-center px-4 py-2 cursor-pointer bg-white hover:bg-blue-50 border border-gray-200 hover:border-blue-300 rounded-lg shadow-sm transition-all duration-300 text-sm group"

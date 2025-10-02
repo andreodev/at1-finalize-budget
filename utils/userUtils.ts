@@ -36,3 +36,50 @@ export function clearUserFromLocalStorage() {
     }
   });
 }
+
+// Controles de processamento para evitar duplicatas
+const PROCESSING_KEY = 'user_processing';
+const PROCESSING_TIMEOUT = 10000; // 10 segundos timeout
+
+export function isUserProcessing(userId: string): boolean {
+  if (typeof window === "undefined") return false;
+  
+  try {
+    const processing = window.localStorage.getItem(`${PROCESSING_KEY}_${userId}`);
+    if (!processing) return false;
+    
+    const timestamp = parseInt(processing);
+    const now = Date.now();
+    
+    // Se passou do timeout, considera como não processando
+    if (now - timestamp > PROCESSING_TIMEOUT) {
+      window.localStorage.removeItem(`${PROCESSING_KEY}_${userId}`);
+      return false;
+    }
+    
+    return true;
+  } catch (error) {
+    console.error('Erro ao verificar processamento:', error);
+    return false;
+  }
+}
+
+export function setUserProcessing(userId: string): void {
+  if (typeof window === "undefined") return;
+  
+  try {
+    window.localStorage.setItem(`${PROCESSING_KEY}_${userId}`, Date.now().toString());
+  } catch (error) {
+    console.error('Erro ao marcar processamento:', error);
+  }
+}
+
+export function clearUserProcessing(userId: string): void {
+  if (typeof window === "undefined") return;
+  
+  try {
+    window.localStorage.removeItem(`${PROCESSING_KEY}_${userId}`);
+  } catch (error) {
+    console.error('Erro ao limpar processamento:', error);
+  }
+}

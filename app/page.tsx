@@ -3,6 +3,7 @@ import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useWlExtension } from "./WlExtensionContext";
 import { UserProvider, useUser } from "./UserContext";
+import { isUserProcessing, setUserProcessing, clearUserProcessing } from "../utils/userUtils";
 
 function HomeContent() {
   const router = useRouter();
@@ -40,6 +41,17 @@ function HomeContent() {
         wl.getInfoChannels(),
       ]);
       setUser(user);
+      
+      // Verificar se o usuário já está sendo processado (evitar duplicatas)
+      if (isUserProcessing(user.userId)) {
+        console.log("[DEBUG] Usuário já está sendo processado, ignorando chamada duplicata");
+        setLoading(false);
+        return;
+      }
+      
+      // Marcar como processando
+      setUserProcessing(user.userId);
+      
       const channelIds = channels
         .map((c: Channel) => c.channelId || c.canalId)
         .filter(Boolean);
@@ -48,6 +60,7 @@ function HomeContent() {
           message: "Nenhum canal disponível para cadastro.",
           variant: "error",
         });
+        clearUserProcessing(user.userId);
         setLoading(false);
         return;
       }
@@ -89,6 +102,7 @@ function HomeContent() {
           setTimeout(() => {
             router.push("/pedidos");
           }, 800);
+          clearUserProcessing(user.userId);
           setLoading(false);
           return;
         } catch {
@@ -117,6 +131,7 @@ function HomeContent() {
         setTimeout(() => {
           router.push("/pedidos");
         }, 800);
+        clearUserProcessing(user.userId);
         setLoading(false);
         return;
       }
@@ -155,6 +170,7 @@ function HomeContent() {
           variant: "error",
         });
       }
+      clearUserProcessing(user.userId);
       setLoading(false);
     };
     verificarOuCadastrar();
