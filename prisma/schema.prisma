@@ -1,4 +1,5 @@
 
+
 generator client {
   provider = "prisma-client-js"
 }
@@ -18,8 +19,15 @@ model User {
 model FinalBudget {
   id     String   @id @map("_id") @default(auto()) @db.ObjectId
   name   String 
-  isAdmin   String
+  name_contact String
+  isAdmin Boolean
   valor  String
   motivo String
   obs    String
+  status String
+}
+
+model Motivo {
+  id        String   @id @map("_id") @default(auto()) @db.ObjectId
+  motivo    String
 }
