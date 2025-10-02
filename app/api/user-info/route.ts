@@ -1,9 +1,9 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const { userId, channelIds } = body;
@@ -15,8 +15,8 @@ export async function POST(request: Request) {
       }, { status: 400 });
     }
 
-    let usersCadastrados: any[] = [];
-    let erros: any[] = [];
+    const usersCadastrados: { channelId: string; user: { name: string; isAdmin: boolean; userId: string } }[] = [];
+    const erros: { channelId: string; error: string }[] = [];
 
     for (const channelId of channelIds) {
       try {
@@ -49,18 +49,35 @@ export async function POST(request: Request) {
             },
           });
           usersCadastrados.push({ channelId, user });
-        } catch (dbError: any) {
+        } catch (dbError: unknown) {
           if (
-            dbError?.code === "P2002" ||
-            String(dbError).includes("Unique constraint failed")
+            typeof dbError === "object" &&
+            dbError !== null &&
+            "code" in dbError &&
+            (dbError as { code?: string }).code === "P2002"
           ) {
             erros.push({ channelId, error: "Conta já cadastrada, seguindo normalmente." });
+          } else if (
+            typeof dbError === "string" &&
+            dbError.includes("Unique constraint failed")
+          ) {
+            erros.push({ channelId, error: "Conta já cadastrada, seguindo normalmente." });
+          } else if (
+            typeof dbError === "object" &&
+            dbError !== null &&
+            "message" in dbError
+          ) {
+            erros.push({ channelId, error: (dbError as { message?: string }).message || String(dbError) });
           } else {
-            erros.push({ channelId, error: dbError?.message || String(dbError) });
+            erros.push({ channelId, error: String(dbError) });
           }
         }
-      } catch (apiError: any) {
-        erros.push({ channelId, error: apiError?.message || String(apiError) });
+      } catch (apiError: unknown) {
+        if (typeof apiError === "object" && apiError !== null && "message" in apiError) {
+          erros.push({ channelId, error: (apiError as { message?: string }).message || String(apiError) });
+        } else {
+          erros.push({ channelId, error: String(apiError) });
+        }
       }
     }
 
@@ -78,9 +95,9 @@ export async function POST(request: Request) {
       // Senão, retorna todos os erros
       return NextResponse.json({ success: false, erros });
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     return NextResponse.json(
-      { success: false, error: error?.message || String(error) },
+      { success: false, error: (error && typeof error === "object" && "message" in error) ? (error as { message?: string }).message : String(error) },
       { status: 500 }
     );
   }

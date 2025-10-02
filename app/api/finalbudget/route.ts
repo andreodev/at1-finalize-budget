@@ -1,10 +1,10 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
 // POST /api/finalbudget
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
     const { name, isAdmin, valor, motivo, obs, status, name_contact } = await request.json();
     if (!name || !valor || !motivo || !status) {

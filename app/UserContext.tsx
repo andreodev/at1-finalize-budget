@@ -6,7 +6,7 @@ export type UserType = {
   userId: string;
   name?: string;
   systemKey?: string;
-  [key: string]: any;
+  [key: string]: unknown;
 };
 
 interface UserContextProps {

@@ -3,24 +3,31 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import Script from "next/script";
 
-// Tipagem global para evitar erro do TypeScript
 declare global {
   interface Window {
-    WlExtension?: any;
+    WlExtension?: WlExtensionType;
   }
 }
 
+interface WlExtensionType {
+  [key: string]: unknown;
+}
+
 interface WlExtensionContextType {
-  wl: any | null;
+  wl: WlExtensionType | null;
   loaded: boolean;
 }
 
-const WlExtensionContext = createContext<WlExtensionContextType>({ wl: null, loaded: false });
+// Cria o contexto com valor padrão
+export const WlExtensionContext = createContext<WlExtensionContextType>({
+  wl: null,
+  loaded: false,
+});
 
 export const useWlExtension = () => useContext(WlExtensionContext);
 
 export const WlExtensionProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [wl, setWl] = useState<any | null>(null);
+  const [wl, setWl] = useState<WlExtensionType | null>(null);
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {

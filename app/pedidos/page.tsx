@@ -340,7 +340,7 @@ export default function PedidosPage() {
                 {!loading && pedidos.length > 0 && (
                     <div className=" rounded-xl  animate-fade-in ">
                         {(() => {
-                            const { totalPages, startIndex, endIndex } = calculatePagination();
+                            const { totalPages} = calculatePagination();
                             return (
                                 <div className="flex flex-col lg:flex-row justify-between items-center gap-6">
                                     {totalPages > 1 && (

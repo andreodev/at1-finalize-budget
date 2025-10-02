@@ -1,10 +1,10 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
 // POST /api/motivos
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
     const { motivo } = await request.json();
     if (!motivo || typeof motivo !== "string") {

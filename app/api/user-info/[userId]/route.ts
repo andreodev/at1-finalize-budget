@@ -1,14 +1,15 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
 export async function GET(
-  request: Request,
-  context: { params: { userId: string } }
+  request: NextRequest,
+  context: { params: Promise<{ userId: string }> }
 ) {
   try {
-    const userId = context.params.userId;
+    const params = await context.params;
+    const userId = params.userId;
     if (!userId) {
       console.warn("[API DEBUG] userId não informado");
       return NextResponse.json({ success: false, error: "userId não informado" }, { status: 400 });

@@ -75,6 +75,7 @@ const { user, setUser } = useUser();
         type: 'error', 
         text: "Erro de conexão. Tente novamente." 
       });
+      console.error("[DEBUG][teste] Erro ao enviar orçamento:", err);
       setTimeout(() => setSubmitMessage(null), 5000);
     } finally {
       setIsSubmitting(false);
@@ -108,7 +109,7 @@ const { user, setUser } = useUser();
     setForm((f) => ({
       ...f,
       name: user?.name || "",
-      isAdmin: user?.isAdmin !== undefined ? (user.isAdmin) : "",
+      isAdmin: !!user?.isAdmin,
     }));
     // Salva userId no localStorage quando usuário estiver disponível
     if (user?.userId && typeof window !== "undefined") {

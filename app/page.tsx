@@ -2,17 +2,34 @@
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useWlExtension } from "./WlExtensionContext";
-import CadastrarMotivos from "./home/page";
 import { UserProvider, useUser } from "./UserContext";
-import HomeCrm from "./pedidos/page";
 
 function HomeContent() {
   const router = useRouter();
-  const { wl, loaded } = useWlExtension();
+  type User = {
+    userId: string;
+    name: string;
+  };
+
+  type Channel = {
+    channelId?: string;
+    canalId?: string;
+  };
+
+  type WlExtension = {
+    getInfoUser: () => Promise<User>;
+    getInfoChannels: () => Promise<Channel[]>;
+    alert: (options: { message: string; variant: string }) => void;
+    initialize: (options: Record<string, unknown>) => void;
+  };
+
+  const { wl, loaded } = useWlExtension() as { wl: WlExtension; loaded: boolean };
   const [registered, setRegistered] = useState(false);
   const [userName, setUserName] = useState("");
   const [loading, setLoading] = useState(false);
-  const { user, setUser } = useUser();
+  const { setUser } = useUser();
+  
+  console.log(userName, registered)
 
   useEffect(() => {
     const verificarOuCadastrar = async () => {
@@ -24,7 +41,7 @@ function HomeContent() {
       ]);
       setUser(user);
       const channelIds = channels
-        .map((c: any) => c.channelId || c.canalId)
+        .map((c: Channel) => c.channelId || c.canalId)
         .filter(Boolean);
       if (channelIds.length === 0) {
         wl.alert({
@@ -39,13 +56,24 @@ function HomeContent() {
         'attendance-view': [
           {
             text: 'Finalizar atendimento personalizado',
-            callback: (atendimento) => {
-              window.WlExtension.modal({
-                url: `http://localhost:3000/teste`,
-                title: "Finalizar atendimento",
-                maxWidth: "600px",
-                height: "600px",
-              });
+            callback: () => {
+              if (
+                typeof window !== "undefined" &&
+                window.WlExtension &&
+                typeof window.WlExtension.modal === "function"
+              ) {
+                (window.WlExtension.modal as (options: {
+                  url: string;
+                  title: string;
+                  maxWidth: string;
+                  height: string;
+                }) => void)({
+                  url: `http://localhost:3000/teste`,
+                  title: "Finalizar atendimento",
+                  maxWidth: "600px",
+                  height: "600px",
+                });
+              }
             }
           }
         ]
